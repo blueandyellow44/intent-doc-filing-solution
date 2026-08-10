@@ -411,9 +411,12 @@ When creating or renaming a document:
 2) **Compute the next `NNN` by a recursive scan of the whole tree** (not `ls` of one dir — the
    sequence is global across the flat root and every subfolder, never restarted per folder):
    ```bash
-   NEXT_NUM=$(printf "%03d" $(($(find 000-docs -type f -printf '%f\n' 2>/dev/null \
-     | grep -oE '^[0-9]{3}' | sort -n | tail -1) + 1)))
+   NEXT_NUM=$(printf "%03d" $(($(find 000-docs -type f 2>/dev/null \
+     | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1) + 1)))
    ```
+   `sed 's#.*/##'` strips the directory so `NNN` stays anchored at line start. Do **not** use
+   `find -printf '%f\n'` — it is a GNU findutils extension, absent from BSD/macOS find, where it
+   aborts and (behind `2>/dev/null`) silently yields `001` for every file.
 3) Pick `CC` from the Category table.
 4) Pick `ABCD` from the Type tables (do not invent).
 5) Create the filename using the exact pattern rules; keep the description short and kebab-case.

@@ -82,7 +82,9 @@ tree**, not just the top level — both to read current state and to compute the
 # Every filed doc, across the flat root AND every subfolder, in true chronological order:
 find 000-docs -type f -name '*.md' 2>/dev/null | sort
 # Highest existing global NNN (shared across root + all subfolders):
-find 000-docs -type f -printf '%f\n' 2>/dev/null | grep -oE '^[0-9]{3}' | sort -n | tail -1
+# `sed 's#.*/##'` strips the directory, so the NNN stays anchored at line start. Do NOT use
+# `find -printf` here: it is a GNU findutils extension, absent from BSD/macOS find.
+find 000-docs -type f 2>/dev/null | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1
 ```
 
 **Step 3: Scan for Loose Documents**
@@ -140,8 +142,12 @@ For each document found:
 # Get next sequence number — RECURSIVE scan of the whole tree (global NNN), NOT `ls` of one dir.
 # (Replaces the v4.3 `ls 000-docs/ | grep` one-liner, which only saw the top level and would
 #  collide once subfolders exist.)
-NEXT_NUM=$(printf "%03d" $(($(find 000-docs -type f -printf '%f\n' 2>/dev/null \
-  | grep -oE '^[0-9]{3}' | sort -n | tail -1) + 1)))
+# POSIX-portable: `sed 's#.*/##'` strips the directory so NNN stays anchored at line start.
+# `find -printf` is a GNU findutils extension and is NOT available in BSD/macOS find, where it
+# aborts with "unknown primary or operator" — silently, because of the 2>/dev/null — leaving the
+# substitution empty so every file is numbered 001.
+NEXT_NUM=$(printf "%03d" $(($(find 000-docs -type f 2>/dev/null \
+  | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1) + 1)))
 
 # Generate new name
 NEW_NAME="${NEXT_NUM}-${CATEGORY}-${DOC_TYPE}-${DESCRIPTION}.${EXTENSION}"
