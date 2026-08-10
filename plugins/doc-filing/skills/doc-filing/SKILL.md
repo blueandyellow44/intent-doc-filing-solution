@@ -277,25 +277,26 @@ MISC, DRFT, ARCH, OLDV, WIPS, INDX
 **What is 000-* Series?**
 The 000-*-series represents **canonical, cross-repo reusable standards** (SOPs). These are global standards applied across multiple projects.
 
-**000-* Filename Pattern (v4.2 Rule):**
+**000-* Filename Pattern (v4.3+ Rule):**
 ```
-000-*-{a|b|c|...}-[TOPIC-]CC-ABCD-short-description.ext
+000-CC-ABCD-short-description.ext
 ```
 
 **Fields:**
-- `000-*`: fixed canonical prefix (used ONCE)
-- `{a|b|c|...}`: **mandatory letter suffix** for chronological ordering
-- `[TOPIC-]`: optional uppercase grouping prefix (e.g., INLINE, LAZY, SLKDEV)
-- `CC`: 2-letter category code
-- `ABCD`: 4-letter document type
+- `000`: fixed canonical prefix for cross-repo standards
+- `CC`: 2-letter category code (same table as the NNN series)
+- `ABCD`: 4-letter document type (same master tables)
 - `short-description`: 1-5 words, kebab-case
 
 **Examples:**
-- `000-*-a-DR-STND-document-filing-system-standard-v4.md`
-- `000-*-b-DR-INDEX-standards-catalog.md`
-- `000-*-c-INLINE-DR-STND-inline-source-deployment.md`
-- `000-*-DR-STND-...` (WRONG - missing letter suffix)
-- `000-*-000-DR-INDEX-...` (WRONG - numeric ID instead of letter)
+- `000-DR-STND-document-filing-system.md`
+- `000-DR-INDX-standards-catalog.md`
+- `000-TM-STND-secrets-handling.md`
+- `000-a-DR-STND-document-filing-system.md` (WRONG - no letter suffix needed)
+- `000-120-DR-INDEX-standards-catalog.md` (WRONG - no numeric ID after 000)
+
+Canonical `000-*` standards always live at the flat root of `000-docs/`, never nested.
+See section 1.3 of `{baseDir}/references/000-DR-STND-document-filing-system.md`.
 
 ## Pattern Matching Rules
 
