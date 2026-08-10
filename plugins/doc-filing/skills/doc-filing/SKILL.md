@@ -80,11 +80,13 @@ At scale, `000-docs/` may hold one level of `NNN-CC-cluster-name/` folders. Alwa
 tree**, not just the top level — both to read current state and to compute the next global `NNN`.
 ```bash
 # Every filed doc, across the flat root AND every subfolder, in true chronological order:
-find 000-docs -type f -name '*.md' 2>/dev/null | sort
+find 000-docs -type f -name '*.md' | sort
 # Highest existing global NNN (shared across root + all subfolders):
 # `sed 's#.*/##'` strips the directory, so the NNN stays anchored at line start. Do NOT use
 # `find -printf` here: it is a GNU findutils extension, absent from BSD/macOS find.
-find 000-docs -type f 2>/dev/null | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1
+# Errors are deliberately NOT sent to /dev/null: a missing or unreadable 000-docs/ must be
+# visible, because a suppressed failure is indistinguishable from an empty tree.
+find 000-docs -type f | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1
 ```
 
 **Step 3: Scan for Loose Documents**
@@ -144,10 +146,17 @@ For each document found:
 #  collide once subfolders exist.)
 # POSIX-portable: `sed 's#.*/##'` strips the directory so NNN stays anchored at line start.
 # `find -printf` is a GNU findutils extension and is NOT available in BSD/macOS find, where it
-# aborts with "unknown primary or operator" — silently, because of the 2>/dev/null — leaving the
-# substitution empty so every file is numbered 001.
-NEXT_NUM=$(printf "%03d" $(($(find 000-docs -type f 2>/dev/null \
-  | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1) + 1)))
+# aborts with "unknown primary or operator", leaving the substitution empty.
+# Three failure modes this guards, all of which used to yield a silent, wrong 001:
+#   1. Scan failure  — a missing or unreadable 000-docs/ now fails loudly instead of being
+#      swallowed by 2>/dev/null and read as "empty tree".
+#   2. Octal parsing — NNN is zero-padded, and POSIX arithmetic reads a leading 0 as octal:
+#      $((047 + 1)) is 040, and $((008 + 1)) is a hard error, so filing stops at doc 007.
+#      The trailing `sed 's/^0*//'` forces base 10. (zsh masks this; bash and dash do not.)
+#   3. Empty tree    — `${HIGHEST:-0}` makes the genuinely-empty case 001, on purpose.
+FILED=$(find 000-docs -type f) || { echo "ERROR: cannot scan 000-docs/; refusing to compute NEXT_NUM" >&2; exit 1; }
+HIGHEST=$(printf '%s\n' "$FILED" | sed 's#.*/##' | grep -oE '^[0-9]{3}' | sort -n | tail -1 | sed 's/^0*//')
+NEXT_NUM=$(printf "%03d" $(( ${HIGHEST:-0} + 1 )))
 
 # Generate new name
 NEW_NAME="${NEXT_NUM}-${CATEGORY}-${DOC_TYPE}-${DESCRIPTION}.${EXTENSION}"
